@@ -2,7 +2,8 @@ package messaging
 
 import (
 	"encoding/json"
-	"github.com/jonathancalvin/golang-clean-architecture-template/internal/domain/model"
+
+	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/model"
 
 	"github.com/IBM/sarama"
 	"github.com/sirupsen/logrus"

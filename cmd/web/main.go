@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/jonathancalvin/golang-clean-architecture-template/internal/config"
+	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/config"
 )
 
 func main() {

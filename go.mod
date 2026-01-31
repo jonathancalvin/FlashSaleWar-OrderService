@@ -1,6 +1,6 @@
 // Template clean architecture untuk Golang microservice
 // Author: Jonathan Calvin
-module github.com/jonathancalvin/golang-clean-architecture-template
+module github.com/jonathancalvin/FlashSaleWar-OrderService
 
 go 1.24.5
 

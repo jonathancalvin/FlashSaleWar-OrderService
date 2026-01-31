@@ -3,7 +3,7 @@ package application
 import (
 	"context"
 
-	"github.com/jonathancalvin/golang-clean-architecture-template/internal/infrastructure/repository"
+	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/infrastructure/repository"
 )
 
 type CreateOrderUseCase struct {
