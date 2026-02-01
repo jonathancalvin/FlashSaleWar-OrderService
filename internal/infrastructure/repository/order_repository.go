@@ -29,6 +29,7 @@ type OrderRepository interface {
 		orderID string,
 		from enum.OrderStatus,
 		to enum.OrderStatus,
+		newExpiresAt *time.Time,
 	) error
 
 	FindExpired(
@@ -69,13 +70,21 @@ func (r *orderRepository) UpdateStatus(
 	orderID string,
 	from enum.OrderStatus,
 	to enum.OrderStatus,
+	newExpiresAt *time.Time,
 ) error {
+	updates := map[string]any{
+		"status": to,
+	}
 
+	if newExpiresAt != nil {
+		updates["expires_at"] = *newExpiresAt
+	}
+	
 	result := tx.
 		Model(&entity.Order{}).
 		Where("order_id = ? AND status = ?", orderID, from).
-		Update("status", to)
-
+		Updates(updates)
+		
 	if result.Error != nil {
 		return result.Error
 	}

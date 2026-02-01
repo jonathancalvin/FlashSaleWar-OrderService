@@ -15,7 +15,7 @@ const (
 
 var ErrInvalidOrderTransition = errors.New("invalid order state transition")
 
-var AllowedOrderTransitions = map[OrderStatus]map[OrderStatus]bool{
+var allowedOrderTransitions = map[OrderStatus]map[OrderStatus]bool{
 	StatusCreated: {
 		StatusReserved:  true,
 		StatusCancelled: true,
@@ -38,7 +38,7 @@ var ExpirableOrderStatuses = []OrderStatus{
 }
 
 func CanTransition(from, to OrderStatus) bool {
-	if next, ok := AllowedOrderTransitions[from]; ok {
+	if next, ok := allowedOrderTransitions[from]; ok {
 		return next[to]
 	}
 	return false
