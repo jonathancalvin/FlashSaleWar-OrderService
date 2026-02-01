@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"errors"
 	"time"
 
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/entity"
@@ -87,8 +86,7 @@ func (r *orderRepository) UpdateStatus(
 			"from_status": from,
 			"to_status":   to,
 		}).Error("no rows affected when updating order status")
-		var ErrInvalidOrderTransition = errors.New("invalid order state transition")
-		return ErrInvalidOrderTransition
+		return enum.ErrInvalidOrderTransition
 	}
 	return nil
 }
