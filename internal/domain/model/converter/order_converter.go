@@ -14,6 +14,7 @@ func OrderToResponse(order *entity.Order) *model.OrderResponse {
 		Currency:    order.Currency,
 		CreatedAt:   order.CreatedAt.Unix(),
 		UpdatedAt:   order.UpdatedAt.Unix(),
+		ExpiredAt: 	 order.ExpiredAt.Unix(),
 	}
 }
 

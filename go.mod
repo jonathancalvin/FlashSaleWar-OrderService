@@ -6,6 +6,8 @@ go 1.24.5
 
 require github.com/stretchr/testify v1.11.1
 
+require github.com/mattn/go-sqlite3 v1.14.22 // indirect
+
 require (
 	github.com/IBM/sarama v1.46.3 // indirect
 	github.com/bytedance/sonic v1.14.0 // indirect
@@ -27,6 +29,7 @@ require (
 	github.com/goccy/go-yaml v1.18.0 // indirect
 	github.com/golang-migrate/migrate/v4 v4.19.1 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
@@ -77,5 +80,6 @@ require (
 	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/postgres v1.6.0 // indirect
+	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.31.1 // indirect
 )

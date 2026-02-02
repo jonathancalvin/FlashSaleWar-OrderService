@@ -29,7 +29,7 @@ type OrderRepository interface {
 		orderID string,
 		from enum.OrderStatus,
 		to enum.OrderStatus,
-		newExpiresAt *time.Time,
+		newExpiredAt *time.Time,
 	) error
 
 	FindExpired(
@@ -59,7 +59,7 @@ func (r *orderRepository) FindByID(
 	var order entity.Order
 	err := db.
 		Where("order_id = ?", orderID).
-		Preload("Items").
+		Preload("OrderItems").
 		Take(&order).Error
 
 	return &order, err
@@ -70,14 +70,14 @@ func (r *orderRepository) UpdateStatus(
 	orderID string,
 	from enum.OrderStatus,
 	to enum.OrderStatus,
-	newExpiresAt *time.Time,
+	newExpiredAt *time.Time,
 ) error {
 	updates := map[string]any{
 		"status": to,
 	}
 
-	if newExpiresAt != nil {
-		updates["expires_at"] = *newExpiresAt
+	if newExpiredAt != nil {
+		updates["expired_at"] = *newExpiredAt
 	}
 	
 	result := tx.
@@ -109,7 +109,7 @@ func (r *orderRepository) FindByIdempotencyKey(
 	var order entity.Order
 	err := db.
 		Where("user_id = ? AND idempotency_key = ?", userID, idempotencyKey).
-		Preload("Items").
+		Preload("OrderItems").
 		Take(&order).Error
 
 	return &order, err
@@ -123,8 +123,8 @@ func (r *orderRepository) FindExpired(
 
 	var orders []entity.Order
 	err := db.
-		Where("status IN ? AND expires_at <= ?", enum.ExpirableOrderStatuses, now).
-		Order("expires_at ASC").
+		Where("status IN ? AND expired_at <= ?", enum.ExpirableOrderStatuses, now).
+		Order("expired_at ASC").
 		Limit(limit).
 		Find(&orders).Error
 

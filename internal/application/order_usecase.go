@@ -111,31 +111,30 @@ func (s *orderUseCase) createOrderWithTx(
 		}
 
 		// 2. Build aggregate
-		order := entity.Order{
-			UserID: req.UserID,
-			IdempotencyKey: req.IdempotencyKey,
-			Status: enum.StatusCreated,
-			ExpiresAt: *enum.CalculateExpiryTime(enum.StatusCreated),
-			Currency: req.Currency,
-			TotalAmount: req.TotalAmount,
-		}
+		order := entity.NewOrder(
+			req.UserID,
+			req.IdempotencyKey,
+			enum.StatusCreated,
+			*enum.CalculateExpiryTime(enum.StatusCreated),
+			req.Currency,
+			req.TotalAmount,
+		)
 
 		for _, item := range req.Items {
-			order.OrderItems = append(order.OrderItems, entity.OrderItem{
-				OrderID:  order.OrderID,
-				SkuID:    item.SkuID,
-				Quantity: item.Quantity,
-				Price:    item.Price,
-				Currency: req.Currency,
-			})
+			order.AddItem(
+				item.SkuID,
+				item.Quantity,
+				item.Price,
+				req.Currency,
+			)
 		}
 
 		// 3. Persist
-		if err := s.OrderRepo.Create(tx, &order); err != nil {
+		if err := s.OrderRepo.Create(tx, order); err != nil {
 			return err
 		}
 
-		result = &order
+		result = order
 		return nil
 	})
 
@@ -172,8 +171,8 @@ func (s *orderUseCase) UpdateOrderStatus(
 			return err
 		}
 
-		// 2. Determine expires_at
-		newExpiresAt := enum.CalculateExpiryTime(to)
+		// 2. Determine expired_at
+		newExpiredAt := enum.CalculateExpiryTime(to)
 
 		// 3. Update status
 		if err := s.OrderRepo.UpdateStatus(
@@ -181,7 +180,7 @@ func (s *orderUseCase) UpdateOrderStatus(
 			orderID,
 			from,
 			to,
-			newExpiresAt,
+			newExpiredAt,
 		); err != nil {
 			s.Log.WithError(err).
 				WithField("order_id", orderID).
