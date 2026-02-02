@@ -8,8 +8,8 @@ import (
 )
 
 type Order struct {
-	OrderID          string        		`gorm:"column:order_id;type:varchar(36);primaryKey"`
-	UserID           string        		`gorm:"column:user_id;type:varchar(36);index;not null"`
+	OrderID          uuid.UUID        	`gorm:"column:order_id;type:uuid;primaryKey"`
+	UserID           uuid.UUID          `gorm:"column:user_id;type:uuid;index;not null"`
 	IdempotencyKey   string        		`gorm:"column:idempotency_key;type:varchar(64);uniqueIndex;not null"`
 	Status           enum.OrderStatus   `gorm:"column:status;type:varchar(20);not null"`
 	Currency  		 string     		`gorm:"column:currency;type:varchar(10)"`
@@ -23,7 +23,7 @@ type Order struct {
 }
 
 func NewOrder(
-	userID string,
+	userID uuid.UUID,
 	idempotencyKey string,
 	status enum.OrderStatus,
 	expiredAt time.Time,
@@ -34,7 +34,7 @@ func NewOrder(
 	now := time.Now().UTC()
 
 	return &Order{
-		OrderID:        uuid.NewString(),
+		OrderID:        uuid.New(),
 		UserID:         userID,
 		IdempotencyKey: idempotencyKey,
 		Status:         status,
@@ -56,7 +56,7 @@ func (o *Order) AddItem(
 	currency string,
 ) {
 	item := OrderItem{
-		OrderItemID: uuid.NewString(),
+		OrderItemID: uuid.New(),
 		OrderID:     o.OrderID,
 		SkuID:       skuID,
 		Quantity:    qty,

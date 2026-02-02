@@ -10,6 +10,7 @@ import (
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/model"
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/model/converter"
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/infrastructure/repository"
+	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/shared/util"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -111,8 +112,14 @@ func (s *orderUseCase) createOrderWithTx(
 		}
 
 		// 2. Build aggregate
+		userID, err := util.StringToUUID(req.UserID)
+		if err != nil {
+			s.Log.Error("Invalid User UUID format")
+			return err
+    	}
+
 		order := entity.NewOrder(
-			req.UserID,
+			userID,
 			req.IdempotencyKey,
 			enum.StatusCreated,
 			*enum.CalculateExpiryTime(enum.StatusCreated),

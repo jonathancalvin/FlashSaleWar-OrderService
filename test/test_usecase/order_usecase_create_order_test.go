@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/enum"
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/model"
 	"github.com/stretchr/testify/assert"
@@ -14,7 +15,7 @@ func TestCreateOrder(t *testing.T) {
 	uc := setupOrderUseCase()
 
 	req := model.CreateOrderRequest{
-		UserID:         "user-1",
+		UserID:         uuid.New().String(),
 		IdempotencyKey: "idem-123",
 		Currency:       "IDR",
 		Items: []model.CreateOrderItem{

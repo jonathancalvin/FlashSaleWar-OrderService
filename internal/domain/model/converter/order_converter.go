@@ -3,12 +3,13 @@ package converter
 import (
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/entity"
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/model"
+	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/shared/util"
 )
 
 func OrderToResponse(order *entity.Order) *model.OrderResponse {
 	return &model.OrderResponse{
-		ID:          order.OrderID,
-		UserID:      order.UserID,
+		ID:          util.UUIDToString(order.OrderID),
+		UserID:      util.UUIDToString(order.UserID),
 		Status:      order.Status,
 		TotalAmount: order.TotalAmount,
 		Currency:    order.Currency,

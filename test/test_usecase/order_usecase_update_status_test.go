@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/enum"
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/model"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +19,7 @@ func TestUpdateOrderStatus_ValidTransition(t *testing.T) {
 
 	// Create order
 	createRes, err := uc.CreateOrder(ctx, model.CreateOrderRequest{
-		UserID:         "user-1",
+		UserID:         uuid.New().String(),
 		IdempotencyKey: "idem-1",
 		Currency:       "IDR",
 		Items: []model.CreateOrderItem{
@@ -49,7 +50,7 @@ func TestUpdateOrderStatus_InvalidTransition(t *testing.T) {
 	ctx := context.Background()
 
 	createRes, err := uc.CreateOrder(ctx, model.CreateOrderRequest{
-		UserID:         "user-1",
+		UserID:         uuid.New().String(),
 		IdempotencyKey: "idem-2",
 		Currency:       "IDR",
 		Items: []model.CreateOrderItem{
