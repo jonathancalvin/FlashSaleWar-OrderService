@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/google/uuid"
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/enum"
 )
 
@@ -16,8 +17,9 @@ type OrderResponse struct {
 }
 
 type CreateOrderRequest struct {
-	UserID   	   string               `json:"user_id" validate:"required,max=100"`
-	IdempotencyKey string          		`json:"idempotency_key" validate:"required,max=100"`
+	UserID        string    `json:"user_id" validate:"required"`
+    UserUUID      uuid.UUID `json:"-"`
+    IdempotencyKey string   `json:"-"`
 	Currency       string               `json:"currency" validate:"required,len=3"`
 	TotalAmount    float64            	`json:"total_amount" validate:"required,gt=0"`
 	Items    	   []CreateOrderItem    `json:"items" validate:"required,min=1,dive"`

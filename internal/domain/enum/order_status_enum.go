@@ -1,6 +1,6 @@
 package enum
 
-import "errors"
+import "github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/domainerr"
 
 type OrderStatus string
 
@@ -12,8 +12,6 @@ const (
 	StatusCancelled      OrderStatus = "CANCELLED"
 	StatusExpired        OrderStatus = "EXPIRED"
 )
-
-var ErrInvalidOrderTransition = errors.New("invalid order state transition")
 
 var allowedOrderTransitions = map[OrderStatus]map[OrderStatus]bool{
 	StatusCreated: {
@@ -46,7 +44,7 @@ func CanTransition(from, to OrderStatus) bool {
 
 func ValidateTransition(from, to OrderStatus) error {
 	if !CanTransition(from, to) {
-		return ErrInvalidOrderTransition
+		return domainerr.ErrInvalidOrderTransition
 	}
 	return nil
 }

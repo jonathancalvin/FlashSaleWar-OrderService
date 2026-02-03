@@ -3,6 +3,8 @@ package repository
 import (
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/domainerr"
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/entity"
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/enum"
 	"github.com/sirupsen/logrus"
@@ -20,7 +22,7 @@ type OrderRepository interface {
 
 	FindByIdempotencyKey(
 		db *gorm.DB,
-		userID string,
+		userID uuid.UUID,
 		idempotencyKey string,
 	) (*entity.Order, error)
 
@@ -95,14 +97,14 @@ func (r *orderRepository) UpdateStatus(
 			"from_status": from,
 			"to_status":   to,
 		}).Error("no rows affected when updating order status")
-		return enum.ErrInvalidOrderTransition
+		return domainerr.ErrInvalidOrderTransition
 	}
 	return nil
 }
 
 func (r *orderRepository) FindByIdempotencyKey(
 	db *gorm.DB,
-	userID string,
+	userID uuid.UUID,
 	idempotencyKey string,
 ) (*entity.Order, error) {
 

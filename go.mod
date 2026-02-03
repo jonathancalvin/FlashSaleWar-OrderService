@@ -6,7 +6,10 @@ go 1.24.5
 
 require github.com/stretchr/testify v1.11.1
 
-require github.com/mattn/go-sqlite3 v1.14.22 // indirect
+require (
+	github.com/mattn/go-sqlite3 v1.14.22 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
+)
 
 require (
 	github.com/IBM/sarama v1.46.3 // indirect

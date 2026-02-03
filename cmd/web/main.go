@@ -7,21 +7,16 @@ import (
 )
 
 func main() {
-	// config
 	viperConfig := config.NewViper()
-
-	// logger
 	log := config.NewLogger(viperConfig)
-
-	// infra
 	db := config.NewDatabase(viperConfig, log)
 	validate := config.NewValidator()
-	router := config.NewGin(viperConfig)
+	app := config.NewGin(viperConfig)
 
 	// bootstrap
 	config.Bootstrap(&config.BootstrapConfig{
 		DB:       db,
-		Router:   router,
+		App:      app,
 		Log:      log,
 		Validate: validate,
 		Config:   viperConfig,
@@ -34,7 +29,7 @@ func main() {
 	}
 
 	log.Infof("HTTP server running on port %d", port)
-	if err := router.Run(fmt.Sprintf(":%d", port)); err != nil {
+	if err := app.Run(fmt.Sprintf(":%d", port)); err != nil {
 		log.Fatal(err)
 	}
 }
