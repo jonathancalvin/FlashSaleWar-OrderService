@@ -26,3 +26,16 @@ func OrdersToResponses(orders []entity.Order) []*model.OrderResponse {
 	}
 	return responses
 }
+
+func OrderItemsToPayloads(order *entity.Order) []model.OrderItemPayload {
+	payloads := make([]model.OrderItemPayload, 0, len(order.OrderItems))
+	for i := range order.OrderItems {
+		item := order.OrderItems[i]
+		payloads = append(payloads, model.OrderItemPayload{
+			SkuID:    item.SkuID,
+			Quantity: item.Quantity,
+			Price:    item.Price,
+		})
+	}
+	return payloads
+}
