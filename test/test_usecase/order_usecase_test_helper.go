@@ -12,7 +12,8 @@ func setupOrderUseCase() (application.OrderUseCase) {
     log := logrus.New()
     
     orderRepo := repository.NewOrderRepository(log)
-    uc := application.NewOrderUseCase(db, log, orderRepo)
+    outboxRepo := repository.NewOutboxRepository(log)
+    uc := application.NewOrderUseCase(db, log, orderRepo, outboxRepo)
     
     return uc
 }

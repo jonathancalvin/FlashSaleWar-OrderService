@@ -17,6 +17,7 @@ func SetupTestDB() *gorm.DB {
 	if err := db.AutoMigrate(
 		&entity.Order{},
 		&entity.OrderItem{},
+		&entity.OutboxEvent{},
 	); err != nil {
 		log.Fatal(err)
 	}
