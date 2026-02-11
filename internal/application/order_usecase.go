@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"time"
 
+	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/domainerr"
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/entity"
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/enum"
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/model"
@@ -24,6 +26,11 @@ type OrderUseCase interface {
 		ctx context.Context,
 		orderID string,
 		to enum.OrderStatus,
+	) (*model.OrderResponse, error)
+
+	CancelOrder(
+		ctx context.Context, 
+		req model.CancelOrderRequest,
 	) (*model.OrderResponse, error)
 }
 
@@ -163,6 +170,69 @@ func (s *orderUseCase) createOrderWithTx(
 	})
 
 	return result, err
+}
+
+func (s *orderUseCase) CancelOrder(
+    ctx context.Context, 
+    req model.CancelOrderRequest,
+) (*model.OrderResponse, error) {
+    var updatedOrder *entity.Order
+    err := s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 1. Fetch Order dan validate ownership
+        order, err := s.OrderRepo.FindByID(tx, req.OrderID)
+        if err != nil {
+            return err
+        }
+
+        if order.UserID.String() != req.UserID {
+            return domainerr.ErrOrderUnauthorized
+        }
+
+        // 2. Validate Transition
+        if err := enum.ValidateTransition(order.Status, enum.StatusCancelled); err != nil {
+            return err
+        }
+
+        // 3. Update Status
+        if err := s.OrderRepo.UpdateStatus(
+            tx, 
+            req.OrderID, 
+            order.Status, 
+            enum.StatusCancelled, 
+            nil,
+        ); err != nil {
+            return err
+        }
+		
+		// Reload updated order inside TX
+		updatedOrder, err = s.OrderRepo.FindByID(tx, req.OrderID)
+        if err != nil {
+            return err
+        }
+
+		// 4. Create Outbox Event
+        cancelPayload := model.OrderCancelledPayload{
+            OrderID:     updatedOrder.OrderID.String(),
+            CancelledAt: time.Now(),
+            Reason:      req.Reason,
+        }
+
+        jsonPayload, _ := json.Marshal(cancelPayload)
+        outboxEvent := entity.NewOutboxEvent(
+            updatedOrder.OrderID,
+            string(enum.EventTypeOrderCancelled),
+            jsonPayload,
+            "PENDING",
+        )
+
+        return s.OutboxRepo.Create(tx, outboxEvent)
+    })
+
+    if err != nil {
+        return nil, err
+    }
+
+    return converter.OrderToResponse(updatedOrder), nil
 }
 
 func (s *orderUseCase) UpdateOrderStatus(

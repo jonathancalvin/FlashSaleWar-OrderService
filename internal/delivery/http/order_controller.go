@@ -110,50 +110,120 @@ func (h *OrderController) CreateOrder(c *gin.Context) {
 }
 
 func (h *OrderController) CancelOrder(c *gin.Context) {
-	h.updateOrderStatus(c, enum.StatusCancelled)
-}
+	var req model.CancelOrderRequest
 
-func (h *OrderController) updateOrderStatus(c *gin.Context, status enum.OrderStatus) {
-	orderID := c.Param("orderID")
-
-	if orderID == "" {
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
 				Error: model.ErrorBody{
 					Code:    string(enum.ErrorInvalidRequest),
-					Message: "orderID is required",
+					Message: "Invalid JSON format",
+				},
+			},
+		)
+		return
+	}
+	cancelReason := enum.CancelReason(req.Reason)
+	if err := cancelReason.IsValid(); err != nil {
+		c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: model.ErrorBody{
+					Code:    string(enum.ErrorInvalidRequest),
+					Message: err.Error(),
 				},
 			},
 		)
 		return
 	}
 
-	if _, err := util.StringToUUID(orderID); err != nil {
+	userUUID, err := util.StringToUUID(req.UserID)
+	if err != nil {
 		c.JSON(
 			http.StatusBadRequest,
 			model.ErrorResponse{
 				Error: model.ErrorBody{
 					Code:    string(enum.ErrorInvalidRequest),
-					Message: "orderID must be a valid UUID",
+					Message: "user_id must be a valid UUID",
 				},
 			},
 		)
 		return
 	}
 
-	resp, err := h.OrderUC.UpdateOrderStatus(
-		c.Request.Context(),
-		orderID,
-		status,
-	)
+	req.UserID = userUUID.String()
+	req.OrderID = c.Param("orderID")
+	req.Reason = cancelReason
+
+	if err := h.Validate.Struct(req); err != nil {
+		h.Log.WithError(err).Warn("validation failed")
+		c.JSON(
+			http.StatusBadRequest,
+			model.ErrorResponse{
+				Error: model.ErrorBody{
+					Code:    string(enum.ErrorValidationFailed),
+					Message: h.formatValidationError(err.(validator.ValidationErrors)),
+				},
+			},
+		)
+		return
+	}
+
+	resp, err := h.OrderUC.CancelOrder(c.Request.Context(), req)
+
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, model.SuccessResponse[model.OrderResponse]{Data: *resp})
+	c.JSON(
+		http.StatusOK,
+		model.SuccessResponse[model.OrderResponse]{Data: *resp},
+	)
 }
+
+// func (h *OrderController) updateOrderStatus(c *gin.Context, status enum.OrderStatus) {
+// 	orderID := c.Param("orderID")
+
+// 	if orderID == "" {
+// 		c.JSON(
+// 			http.StatusBadRequest,
+// 			model.ErrorResponse{
+// 				Error: model.ErrorBody{
+// 					Code:    string(enum.ErrorInvalidRequest),
+// 					Message: "orderID is required",
+// 				},
+// 			},
+// 		)
+// 		return
+// 	}
+
+// 	if _, err := util.StringToUUID(orderID); err != nil {
+// 		c.JSON(
+// 			http.StatusBadRequest,
+// 			model.ErrorResponse{
+// 				Error: model.ErrorBody{
+// 					Code:    string(enum.ErrorInvalidRequest),
+// 					Message: "orderID must be a valid UUID",
+// 				},
+// 			},
+// 		)
+// 		return
+// 	}
+
+// 	resp, err := h.OrderUC.UpdateOrderStatus(
+// 		c.Request.Context(),
+// 		orderID,
+// 		status,
+// 	)
+// 	if err != nil {
+// 		h.handleError(c, err)
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, model.SuccessResponse[model.OrderResponse]{Data: *resp})
+// }
 
 func (h *OrderController) handleError(c *gin.Context, err error) {
 	var (
@@ -180,6 +250,12 @@ func (h *OrderController) handleError(c *gin.Context, err error) {
 
 		httpStatus = http.StatusConflict
 		errorCode = enum.ErrorOrderAlreadyExpired
+		message = err.Error()
+	
+	case domainerr.ErrOrderUnauthorized:
+		
+		httpStatus = http.StatusForbidden
+		errorCode = enum.ErrorUnauthorized
 		message = err.Error()
 
 	default:

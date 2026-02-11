@@ -16,12 +16,15 @@ func TestCancelOrder_Success(t *testing.T) {
 
 	orderID := "550e8400-e29b-41d4-a716-446655440000"
 
+	reqBody := map[string]any{
+		"user_id": "550e8400-e29b-41d4-a716-446655440000",
+		"reason":  "USER_CANCEL",
+	}
 	mockUC.
 		On(
-			"UpdateOrderStatus",
+			"CancelOrder",
 			mock.Anything,
-			orderID,
-			enum.StatusCancelled,
+			mock.AnythingOfType("model.CancelOrderRequest"),
 		).
 		Return(&model.OrderResponse{
 			ID:     orderID,
@@ -33,7 +36,7 @@ func TestCancelOrder_Success(t *testing.T) {
 		r,
 		http.MethodPost,
 		"/order/"+orderID+"/cancel",
-		nil,
+		reqBody,
 		nil,
 	)
 
@@ -53,20 +56,22 @@ func TestCancelOrder_InvalidOrderID(t *testing.T) {
 	)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	mockUC.AssertNotCalled(t, "UpdateOrderStatus")
+	mockUC.AssertNotCalled(t, "CancelOrder", mock.Anything, mock.Anything)
 }
 
 func TestCancelOrder_NotFound(t *testing.T) {
 	r, mockUC := setupTestController()
-
 	orderID := "550e8400-e29b-41d4-a716-446655440000"
+	reqBody := map[string]any{
+		"user_id": "550e8400-e29b-41d4-a716-446655440000",
+		"reason":  "USER_CANCEL",
+	}
 
 	mockUC.
 		On(
-			"UpdateOrderStatus",
+			"CancelOrder",
 			mock.Anything,
-			orderID,
-			enum.StatusCancelled,
+			mock.AnythingOfType("model.CancelOrderRequest"),
 		).
 		Return(nil, domainerr.ErrOrderNotFound).
 		Once()
@@ -75,7 +80,7 @@ func TestCancelOrder_NotFound(t *testing.T) {
 		r,
 		http.MethodPost,
 		"/order/"+orderID+"/cancel",
-		nil,
+		reqBody,
 		nil,
 	)
 

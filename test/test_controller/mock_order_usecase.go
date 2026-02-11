@@ -41,3 +41,16 @@ func (m *MockOrderUseCase) UpdateOrderStatus(
 
 	return args.Get(0).(*model.OrderResponse), args.Error(1)
 }
+
+func (m *MockOrderUseCase) CancelOrder(
+	ctx context.Context,
+	req model.CancelOrderRequest,
+) (*model.OrderResponse, error) {
+	
+	args := m.Called(ctx, req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
+	return args.Get(0).(*model.OrderResponse), args.Error(1)
+}

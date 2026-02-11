@@ -39,6 +39,7 @@ func (p OrderPaidPayload) GetResourceID() string {
 type OrderCancelledPayload struct {
 	OrderID string `json:"order_id"`
 	Reason  enum.CancelReason `json:"reason"`
+	CancelledAt time.Time `json:"cancelled_at"`
 }
 
 func (p OrderCancelledPayload) GetResourceID() string {
@@ -49,6 +50,7 @@ func (p OrderCancelledPayload) GetResourceID() string {
 type OrderExpiredPayload struct {
 	OrderID string `json:"order_id"`
 	Reason  enum.ExpireReason `json:"reason"`
+	ExpiredAt time.Time `json:"expired_at"`
 }
 
 func (p OrderExpiredPayload) GetResourceID() string {

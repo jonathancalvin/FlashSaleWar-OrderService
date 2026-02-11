@@ -34,6 +34,7 @@ type CreateOrderItem struct {
 type CancelOrderRequest struct {
 	OrderID string `json:"-" validate:"required,max=100"`
 	UserID  string `json:"user_id" validate:"required,max=100"`
+	Reason enum.CancelReason `json:"reason" validate:"required,oneof=USER_CANCEL STOCK_EXHAUSTED"`
 }
 
 type GetOrderRequest struct {
