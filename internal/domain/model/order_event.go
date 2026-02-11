@@ -6,7 +6,6 @@ import (
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/enum"
 )
 
-// topic: order.created
 type OrderCreatedPayload struct {
 	OrderID     string             `json:"order_id"`
 	UserID      string             `json:"user_id"`

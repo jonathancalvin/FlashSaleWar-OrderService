@@ -23,12 +23,14 @@ type BootstrapConfig struct {
 func Bootstrap(cfg *BootstrapConfig) {
 	// ===== Repository =====
 	orderRepo := repository.NewOrderRepository(cfg.Log)
+	outboxRepo := repository.NewOutboxRepository(cfg.Log)
 
 	// ===== Usecase =====
 	orderUsecase := application.NewOrderUseCase(
 		cfg.DB,
 		cfg.Log,
 		orderRepo,
+		outboxRepo,
 	)
 
 	// ===== Controller =====

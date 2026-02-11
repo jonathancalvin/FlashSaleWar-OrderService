@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/entity"
@@ -31,17 +32,20 @@ type orderUseCase struct {
 	Log       *logrus.Logger
 
 	OrderRepo repository.OrderRepository
+	OutboxRepo repository.OutboxRepository
 }
 
 func NewOrderUseCase(
 	db *gorm.DB,
 	log *logrus.Logger,
 	orderRepo repository.OrderRepository,
+	outboxRepo repository.OutboxRepository,
 ) OrderUseCase {
 	return &orderUseCase{
 		DB:        db,
 		Log:       log,
 		OrderRepo: orderRepo,
+		OutboxRepo: outboxRepo,
 	}
 }
 
@@ -106,7 +110,9 @@ func (s *orderUseCase) createOrderWithTx(
 			return err
 		}
 
-		order := entity.NewOrder(
+		// 2. Prepare entities
+
+		orderEntity := entity.NewOrder(
 			req.UserUUID,
 			req.IdempotencyKey,
 			enum.StatusCreated,
@@ -116,7 +122,7 @@ func (s *orderUseCase) createOrderWithTx(
 		)
 
 		for _, item := range req.Items {
-			order.AddItem(
+			orderEntity.AddItem(
 				item.SkuID,
 				item.Quantity,
 				item.Price,
@@ -124,12 +130,35 @@ func (s *orderUseCase) createOrderWithTx(
 			)
 		}
 
+		payload := model.OrderCreatedPayload{
+			OrderID:  orderEntity.OrderID.String(),
+			UserID:   orderEntity.UserID.String(),
+			TotalAmount: orderEntity.TotalAmount,
+			Currency:    orderEntity.Currency,
+			Items:      converter.OrderItemsToPayloads(orderEntity),
+			CreatedAt:  orderEntity.CreatedAt,
+		}
+
+		jsonPayload, _ := json.Marshal(payload)
+
+		outboxEntity := entity.NewOutboxEvent(
+			orderEntity.OrderID,
+			string(enum.EventTypeOrderCreated),
+			jsonPayload,
+			"PENDING",
+		)
+
+
 		// 3. Persist
-		if err := s.OrderRepo.Create(tx, order); err != nil {
+		if err := s.OrderRepo.Create(tx, orderEntity); err != nil {
 			return err
 		}
 
-		result = order
+		if err := s.OutboxRepo.Create(tx, outboxEntity); err != nil {
+			return err
+		}
+
+		result = orderEntity
 		return nil
 	})
 
