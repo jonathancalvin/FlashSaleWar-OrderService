@@ -3,10 +3,9 @@ package enum
 type EventTopic string
 
 const (
-	OrderCreated   EventTopic = "order.v1.created"
-	OrderPaid      EventTopic = "order.v1.paid"
-	OrderCancelled EventTopic = "order.v1.cancelled"
-	OrderExpired   EventTopic = "order.v1.expired"
+	OrderEvent EventTopic = "order.v1.events"
+	InventoryEvent EventTopic = "inventory.v1.events"
+	PaymentEvent   EventTopic = "payment.v1.events"
 )
 
 type EventType string
@@ -16,11 +15,27 @@ const (
 	EventTypeOrderPaid      EventType = "ORDER_PAID"
 	EventTypeOrderCancelled EventType = "ORDER_CANCELLED"
 	EventTypeOrderExpired   EventType = "ORDER_EXPIRED"
+
+	EventTypeInventoryReserved EventType = "INVENTORY_RESERVED"
+	EventTypeInventoryReservationFailed EventType = "INVENTORY_RESERVATION_FAILED"
+	EventTypeInventoryReleased EventType = "INVENTORY_RELEASED"
+	
+	EventTypePaymentIntentCreated EventType = "PAYMENT_INTENT_CREATED"
+	EventTypePaymentProcessed EventType = "PAYMENT_PROCESSED"
+	EventTypePaymentFailed    EventType = "PAYMENT_FAILED"
 )
 
 var EventTypeToTopic = map[EventType]EventTopic{
-	EventTypeOrderCreated:   OrderCreated,
-	EventTypeOrderPaid:      OrderPaid,
-	EventTypeOrderCancelled: OrderCancelled,
-	EventTypeOrderExpired:   OrderExpired,
+	EventTypeOrderCreated:   OrderEvent,
+    EventTypeOrderPaid:      OrderEvent,
+    EventTypeOrderCancelled: OrderEvent,
+    EventTypeOrderExpired:   OrderEvent,
+
+	EventTypeInventoryReserved:          InventoryEvent,
+	EventTypeInventoryReservationFailed: InventoryEvent,
+	EventTypeInventoryReleased:          InventoryEvent,
+
+	EventTypePaymentIntentCreated: PaymentEvent,
+	EventTypePaymentProcessed:     PaymentEvent,
+	EventTypePaymentFailed:        PaymentEvent,
 }
