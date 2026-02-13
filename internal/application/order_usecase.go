@@ -177,19 +177,37 @@ func (s *orderUseCase) CancelOrder(
     req model.CancelOrderRequest,
 ) (*model.OrderResponse, error) {
     var updatedOrder *entity.Order
+
+	s.Log.WithFields(logrus.Fields{
+		"order_id":        req.OrderID,
+		"user_id":          req.UserID,
+		"reason":           req.Reason,
+	}).Info("cancel order requested")
+
     err := s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// 1. Fetch Order dan validate ownership
+        // 1. Fetch Order dan validate ownership
         order, err := s.OrderRepo.FindByID(tx, req.OrderID)
         if err != nil {
+            s.Log.WithError(err).WithField("order_id", req.OrderID).Error("failed to fetch order for cancellation")
             return err
         }
 
         if order.UserID.String() != req.UserID {
+            s.Log.WithFields(logrus.Fields{
+                "order_id": req.OrderID,
+                "user_id":  req.UserID,
+                "owner_id": order.UserID.String(),
+            }).Warn("unauthorized cancellation attempt")
             return domainerr.ErrOrderUnauthorized
         }
 
         // 2. Validate Transition
         if err := enum.ValidateTransition(order.Status, enum.StatusCancelled); err != nil {
+            s.Log.WithFields(logrus.Fields{
+                "order_id":    req.OrderID,
+                "current_status": order.Status,
+                "target_status":  enum.StatusCancelled,
+            }).Warn("invalid order status transition for cancellation")
             return err
         }
 
@@ -201,23 +219,29 @@ func (s *orderUseCase) CancelOrder(
             enum.StatusCancelled, 
             nil,
         ); err != nil {
+            s.Log.WithError(err).WithField("order_id", req.OrderID).Error("failed to update order status to cancelled")
             return err
         }
-		
-		// Reload updated order inside TX
-		updatedOrder, err = s.OrderRepo.FindByID(tx, req.OrderID)
+        
+        // 4. Reload updated order inside TX
+        updatedOrder, err = s.OrderRepo.FindByID(tx, req.OrderID)
         if err != nil {
             return err
         }
 
-		// 4. Create Outbox Event
+        // 5. Create Outbox Event
         cancelPayload := model.OrderCancelledPayload{
             OrderID:     updatedOrder.OrderID.String(),
             CancelledAt: time.Now(),
             Reason:      req.Reason,
         }
 
-        jsonPayload, _ := json.Marshal(cancelPayload)
+        jsonPayload, err := json.Marshal(cancelPayload)
+        if err != nil {
+            s.Log.WithError(err).WithField("order_id", updatedOrder.OrderID).Error("failed to marshal cancel payload")
+            return err
+        }
+
         outboxEvent := entity.NewOutboxEvent(
             updatedOrder.OrderID,
             string(enum.EventTypeOrderCancelled),
@@ -225,7 +249,18 @@ func (s *orderUseCase) CancelOrder(
             "PENDING",
         )
 
-        return s.OutboxRepo.Create(tx, outboxEvent)
+        if err := s.OutboxRepo.Create(tx, outboxEvent); err != nil {
+            s.Log.WithError(err).WithField("order_id", updatedOrder.OrderID).Error("failed to persist cancel outbox event")
+            return err
+        }
+
+        s.Log.WithFields(logrus.Fields{
+            "order_id": updatedOrder.OrderID,
+            "user_id":  updatedOrder.UserID,
+            "reason":   req.Reason,
+        }).Info("order successfully cancelled and outbox event created")
+
+        return nil
     })
 
     if err != nil {
