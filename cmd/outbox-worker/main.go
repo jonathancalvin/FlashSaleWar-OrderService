@@ -21,10 +21,11 @@ func main() {
 	// setup dependencies
 	outboxRepo := repository.NewOutboxRepository(log)
 
-	producer, err := messaging.NewKafkaProducer(
-		viperConfig.GetStringSlice("kafka.brokers"),
+	producer, err := config.NewKafkaProducer(
+		viperConfig,
 		log,
 	)
+	
 	if err != nil {
 		log.Fatal(err)
 	}

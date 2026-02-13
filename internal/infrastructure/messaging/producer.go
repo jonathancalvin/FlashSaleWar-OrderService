@@ -13,31 +13,13 @@ type KafkaProducer interface {
 	Close() error
 }
 
-type kafkaProducer struct {
+type KafkaProducerImpl struct {
 	Producer sarama.SyncProducer
 	Log      *logrus.Logger
 	done     chan struct{}
 }
 
-func NewKafkaProducer(brokers []string, log *logrus.Logger) (KafkaProducer, error) {
-	config := sarama.NewConfig()
-	config.Producer.RequiredAcks = sarama.WaitForAll 
-	config.Producer.Retry.Max = 5
-	config.Producer.Return.Successes = true
-
-	producer, err := sarama.NewSyncProducer(brokers, config)
-	if err != nil {
-		log.Errorf("failed to create Kafka producer: %v", err)
-		return nil, err
-	}
-
-	return &kafkaProducer{
-		Producer: producer,
-		Log:      log,
-	}, nil
-}
-
-func (p *kafkaProducer) Publish(topic string, key string, envelope model.EventEnvelope) error {
+func (p *KafkaProducerImpl) Publish(topic string, key string, envelope model.EventEnvelope) error {
 	payload, err := json.Marshal(envelope)
 	if err != nil {
 		p.Log.WithFields(logrus.Fields{
@@ -67,6 +49,6 @@ func (p *kafkaProducer) Publish(topic string, key string, envelope model.EventEn
 	return nil
 }
 
-func (p *kafkaProducer) Close() error {
+func (p *KafkaProducerImpl) Close() error {
 	return p.Producer.Close()
 }
