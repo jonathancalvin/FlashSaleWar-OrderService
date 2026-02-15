@@ -6,7 +6,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/domainerr"
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/entity"
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/enum"
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/model"
@@ -150,7 +149,7 @@ func (s *orderUseCase) createOrderWithTx(
 
 		outboxEntity := entity.NewOutboxEvent(
 			orderEntity.OrderID,
-			string(enum.EventTypeOrderCreated),
+			enum.EventTypeOrderCreated,
 			jsonPayload,
 			"PENDING",
 		)
@@ -180,7 +179,6 @@ func (s *orderUseCase) CancelOrder(
 
 	s.Log.WithFields(logrus.Fields{
 		"order_id":        req.OrderID,
-		"user_id":          req.UserID,
 		"reason":           req.Reason,
 	}).Info("cancel order requested")
 
@@ -190,15 +188,6 @@ func (s *orderUseCase) CancelOrder(
         if err != nil {
             s.Log.WithError(err).WithField("order_id", req.OrderID).Error("failed to fetch order for cancellation")
             return err
-        }
-
-        if order.UserID.String() != req.UserID {
-            s.Log.WithFields(logrus.Fields{
-                "order_id": req.OrderID,
-                "user_id":  req.UserID,
-                "owner_id": order.UserID.String(),
-            }).Warn("unauthorized cancellation attempt")
-            return domainerr.ErrOrderUnauthorized
         }
 
         // 2. Validate Transition
@@ -244,7 +233,7 @@ func (s *orderUseCase) CancelOrder(
 
         outboxEvent := entity.NewOutboxEvent(
             updatedOrder.OrderID,
-            string(enum.EventTypeOrderCancelled),
+            enum.EventTypeOrderCancelled,
             jsonPayload,
             "PENDING",
         )

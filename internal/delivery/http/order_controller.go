@@ -138,21 +138,6 @@ func (h *OrderController) CancelOrder(c *gin.Context) {
 		return
 	}
 
-	userUUID, err := util.StringToUUID(req.UserID)
-	if err != nil {
-		c.JSON(
-			http.StatusBadRequest,
-			model.ErrorResponse{
-				Error: model.ErrorBody{
-					Code:    string(enum.ErrorInvalidRequest),
-					Message: "user_id must be a valid UUID",
-				},
-			},
-		)
-		return
-	}
-
-	req.UserID = userUUID.String()
 	req.OrderID = c.Param("orderID")
 	req.Reason = cancelReason
 

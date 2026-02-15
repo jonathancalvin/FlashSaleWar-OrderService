@@ -86,7 +86,7 @@ func (w *OutboxWorker) handleEvent(
 		return err
 	}
 
-	topic, ok := enum.EventTypeToTopic[enum.EventType(evt.EventType)]
+	topic, ok := enum.EventTypeToTopic[evt.EventType]
 	if !ok {
 		err := fmt.Errorf("no topic mapping for event type: %s", evt.EventType)
 		_ = w.Repo.MarkFailed(tx, evt.ID, err.Error())

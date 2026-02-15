@@ -25,7 +25,7 @@ func TestOutboxWorker_Process_Success(t *testing.T) {
 
 	envelope := model.EventEnvelope{
 		EventID:       "evt-1",
-		EventType:     string(enum.EventTypeOrderCreated),
+		EventType:     enum.EventTypeOrderCreated,
 		OccurredAt:    time.Now(),
 		SchemaVersion: 1,
 		Payload: model.OrderCreatedPayload{
@@ -51,7 +51,7 @@ func TestOutboxWorker_Process_Success(t *testing.T) {
 				{
 					ID:          uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 					AggregateID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-					EventType:   string(enum.EventTypeOrderCreated),
+					EventType:   enum.EventTypeOrderCreated,
 					Payload:     payload,
 					Status:      "PENDING",
 				},
@@ -71,9 +71,9 @@ func TestOutboxWorker_Process_Success(t *testing.T) {
 
 	producer := &MockProducer{
 		PublishFn: func(topic string, key string, envelope model.EventEnvelope) error {
-			assert.Equal(t, "order.v1.created", topic)
+			assert.Equal(t, "order.v1.events", topic)
 			assert.Equal(t, "00000000-0000-0000-0000-000000000002", key)
-			assert.Equal(t, string(enum.EventTypeOrderCreated), envelope.EventType)
+			assert.Equal(t, enum.EventTypeOrderCreated, envelope.EventType)
 			return nil
 		},
 	}

@@ -4,13 +4,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/enum"
 	"gorm.io/datatypes"
 )
 
 type OutboxEvent struct {
     ID          uuid.UUID      `gorm:"column:id;type:uuid;primaryKey"` 
     AggregateID uuid.UUID      `gorm:"column:aggregate_id;type:uuid;not null;index:idx_outbox_aggregate"`
-    EventType   string         `gorm:"column:event_type;type:varchar(100);not null"`
+    EventType   enum.EventType         `gorm:"column:event_type;type:varchar(100);not null"`
     Payload     datatypes.JSON `gorm:"column:payload;not null"`
 
     Status     string  `gorm:"column:status;type:varchar(20);not null;index:idx_outbox_pending,priority:1"`
@@ -27,7 +28,7 @@ func (OutboxEvent) TableName() string {
 
 func NewOutboxEvent(
 	aggregateID uuid.UUID,
-	eventType string,
+	eventType enum.EventType,
 	payload datatypes.JSON,
 	status string,
 ) *OutboxEvent {

@@ -1,6 +1,10 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/enum"
+)
 
 type IdentifiablePayload interface {
     GetResourceID() string
@@ -8,7 +12,7 @@ type IdentifiablePayload interface {
 
 type EventEnvelope struct {
 	EventID       string    `json:"event_id"`
-	EventType     string    `json:"event_type"`
+	EventType     enum.EventType `json:"event_type"`
 	OccurredAt    time.Time `json:"occurred_at"`
 	SchemaVersion int       `json:"schema_version"`
 	Payload       any       `json:"payload"`
