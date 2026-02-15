@@ -21,8 +21,8 @@ const (
 	EventTypeInventoryReleased EventType = "INVENTORY_RELEASED"
 	
 	EventTypePaymentIntentCreated EventType = "PAYMENT_INTENT_CREATED"
-	EventTypePaymentProcessed EventType = "PAYMENT_PROCESSED"
 	EventTypePaymentFailed    EventType = "PAYMENT_FAILED"
+	EventTypePaymentSucceeded EventType = "PAYMENT_SUCCEEDED"
 )
 
 var EventTypeToTopic = map[EventType]EventTopic{
@@ -36,6 +36,5 @@ var EventTypeToTopic = map[EventType]EventTopic{
 	EventTypeInventoryReleased:          InventoryEvent,
 
 	EventTypePaymentIntentCreated: PaymentEvent,
-	EventTypePaymentProcessed:     PaymentEvent,
 	EventTypePaymentFailed:        PaymentEvent,
 }
