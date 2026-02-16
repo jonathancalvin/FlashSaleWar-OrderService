@@ -3,9 +3,9 @@ package enum
 type EventTopic string
 
 const (
-	OrderEvent EventTopic = "order.v1.events"
-	InventoryEvent EventTopic = "inventory.v1.events"
-	PaymentEvent   EventTopic = "payment.v1.events"
+	OrderTopic EventTopic = "order.v1.events"
+	InventoryTopic EventTopic = "inventory.v1.events"
+	PaymentTopic   EventTopic = "payment.v1.events"
 )
 
 type EventType string
@@ -26,15 +26,15 @@ const (
 )
 
 var EventTypeToTopic = map[EventType]EventTopic{
-	EventTypeOrderCreated:   OrderEvent,
-    EventTypeOrderPaid:      OrderEvent,
-    EventTypeOrderCancelled: OrderEvent,
-    EventTypeOrderExpired:   OrderEvent,
+	EventTypeOrderCreated:   OrderTopic,
+    EventTypeOrderPaid:      OrderTopic,
+    EventTypeOrderCancelled: OrderTopic,
+    EventTypeOrderExpired:   OrderTopic,
 
-	EventTypeInventoryReserved:          InventoryEvent,
-	EventTypeInventoryReservationFailed: InventoryEvent,
-	EventTypeInventoryReleased:          InventoryEvent,
+	EventTypeInventoryReserved:          InventoryTopic,
+	EventTypeInventoryReservationFailed: InventoryTopic,
+	EventTypeInventoryReleased:          InventoryTopic,
 
-	EventTypePaymentIntentCreated: PaymentEvent,
-	EventTypePaymentFailed:        PaymentEvent,
+	EventTypePaymentIntentCreated: PaymentTopic,
+	EventTypePaymentFailed:        PaymentTopic,
 }

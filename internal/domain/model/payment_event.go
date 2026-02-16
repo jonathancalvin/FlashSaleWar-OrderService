@@ -7,7 +7,7 @@ import (
 )
 
 // PaymentIntentCreated represents the 'payment.intent_created' event
-type PaymentIntentCreated struct {
+type PaymentIntentCreatedPayload struct {
 	PaymentIntentID string    `json:"payment_intent_id"`
 	OrderID         string    `json:"order_id"`
 	Amount          int64     `json:"amount"`
@@ -16,7 +16,7 @@ type PaymentIntentCreated struct {
 }
 
 // PaymentSucceeded represents the 'payment.succeeded' event
-type PaymentSucceeded struct {
+type PaymentSucceededPayload struct {
 	PaymentIntentID string    `json:"payment_intent_id"`
 	OrderID         string    `json:"order_id"`
 	GatewayEventID  string    `json:"gateway_event_id"`
@@ -24,7 +24,7 @@ type PaymentSucceeded struct {
 }
 
 // PaymentFailed represents the 'payment.failed' event
-type PaymentFailed struct {
+type PaymentFailedPayload struct {
 	PaymentIntentID string `json:"payment_intent_id"`
 	OrderID         string `json:"order_id"`
 	GatewayEventID  string `json:"gateway_event_id"`

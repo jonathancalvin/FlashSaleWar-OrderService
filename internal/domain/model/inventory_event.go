@@ -5,24 +5,28 @@ import (
 
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/domain/enum"
 )
+type InventoryItem struct {
+	ItemID   string `json:"item_id"`
+	Quantity int    `json:"quantity"`
+}
 
-// InventoryReserved represents the 'inventory.reserved' event
-type InventoryReserved struct {
-	OrderID              string    `json:"order_id"`
-	ItemID               string    `json:"item_id"`
-	Quantity             int       `json:"quantity"`
+// InventoryReserved represents the 'INVENTORY_RESERVED' event
+type InventoryReservedPayload struct {
+	OrderID string          `json:"order_id"`
+	Items   []InventoryItem `json:"items"`
 	ReservationExpiresAt time.Time `json:"reservation_expires_at"`
 }
 
-// InventoryReservationFailed represents the 'inventory.reservation_failed' event
-type InventoryReservationFailed struct {
-	OrderID string `json:"order_id"`
-	ItemID  string `json:"item_id"`
+// InventoryReservationFailed represents the 'INVENTORY_RESERVATION_FAILED' event
+type InventoryReservationFailedPayload struct {
+	OrderID string          `json:"order_id"`
+	FailedItems []InventoryItem `json:"failed_items"`
+	Reason  string          `json:"reason"`
 }
 
-// InventoryReleased represents the 'inventory.released' event
-type InventoryReleased struct {
-	OrderID string `json:"order_id"`
-	ItemID  string `json:"item_id"`
+// InventoryReleased represents the 'INVENTORY_RELEASED' event
+type InventoryReleasedPayload struct {
+	OrderID string          `json:"order_id"`
+	Items   []InventoryItem `json:"items"`
 	Reason  enum.InventoryReleaseReason `json:"reason"`
 }
