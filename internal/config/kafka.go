@@ -25,3 +25,24 @@ func NewKafkaProducer(config *viper.Viper, log *logrus.Logger) (messaging.KafkaP
 		Log:      log,
 	}, nil
 }
+
+func NewKafkaConsumerGroup(config *viper.Viper, log *logrus.Logger) sarama.ConsumerGroup {
+	saramaConfig := sarama.NewConfig()
+	saramaConfig.Consumer.Return.Errors = true
+
+	offsetReset := config.GetString("kafka.offset.reset")
+	if offsetReset == "earliest" {
+		saramaConfig.Consumer.Offsets.Initial = sarama.OffsetOldest
+	} else {
+		saramaConfig.Consumer.Offsets.Initial = sarama.OffsetNewest
+	}
+
+	brokers := config.GetStringSlice("kafka.brokers")
+	groupID := config.GetString("kafka.group.id")
+
+	consumerGroup, err := sarama.NewConsumerGroup(brokers, groupID, saramaConfig)
+	if err != nil {
+		log.Fatalf("Failed to create consumer group: %v", err)
+	}
+	return consumerGroup
+}
