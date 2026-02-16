@@ -1,4 +1,4 @@
-package test_controller
+package mock
 
 import (
 	"context"
@@ -52,5 +52,17 @@ func (m *MockOrderUseCase) CancelOrder(
 		return nil, args.Error(1)
 	}
 
+	return args.Get(0).(*model.OrderResponse), args.Error(1)
+}
+
+func (m *MockOrderUseCase) MarkOrderPaid(
+	ctx context.Context,
+	orderID string,
+) (*model.OrderResponse, error) {
+	args := m.Called(ctx, orderID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	
 	return args.Get(0).(*model.OrderResponse), args.Error(1)
 }

@@ -10,14 +10,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jonathancalvin/FlashSaleWar-OrderService/internal/delivery/http"
+	"github.com/jonathancalvin/FlashSaleWar-OrderService/test/mock"
 	"github.com/sirupsen/logrus"
 )
 
-func setupTestController() (*gin.Engine, *MockOrderUseCase) {
+func setupTestController() (*gin.Engine, *mock.MockOrderUseCase) {
 	gin.SetMode(gin.TestMode)
 
 	r := gin.New()
-	mockUC := new(MockOrderUseCase)
+	mockUC := new(mock.MockOrderUseCase)
 
 	ctrl := http.NewOrderController(mockUC, logrus.New(), validator.New())
 

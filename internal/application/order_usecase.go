@@ -31,6 +31,11 @@ type OrderUseCase interface {
 		ctx context.Context, 
 		req model.CancelOrderRequest,
 	) (*model.OrderResponse, error)
+
+	MarkOrderPaid(
+		ctx context.Context,
+		orderID string,
+	) (*model.OrderResponse, error)
 }
 
 type orderUseCase struct {
@@ -328,3 +333,107 @@ func (s *orderUseCase) UpdateOrderStatus(
 	return converter.OrderToResponse(updatedOrder), nil
 }
 
+func (s *orderUseCase) MarkOrderPaid(
+	ctx context.Context,
+	orderID string,
+) (*model.OrderResponse, error) {
+
+	var updatedOrder *entity.Order
+
+	s.Log.WithFields(logrus.Fields{
+		"order_id": orderID,
+	}).Info("mark order paid requested")
+
+	err := s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+
+		// 1. Fetch order
+		order, err := s.OrderRepo.FindByID(tx, orderID)
+		if err != nil {
+			s.Log.WithError(err).
+				WithField("order_id", orderID).
+				Error("failed to fetch order for mark paid")
+			return err
+		}
+
+		// 2. Validate transition
+		if err := enum.ValidateTransition(order.Status, enum.StatusPaid); err != nil {
+			s.Log.WithFields(logrus.Fields{
+				"order_id":      orderID,
+				"current_status": order.Status,
+				"target_status":  enum.StatusPaid,
+			}).Warn("invalid order status transition to paid")
+			return err
+		}
+
+		// 3. Optional: validate expiry
+		if !order.ExpiredAt.IsZero() && time.Now().After(order.ExpiredAt) {
+			s.Log.WithFields(logrus.Fields{
+				"order_id": orderID,
+				"expired_at": order.ExpiredAt,
+			}).Warn("cannot mark order paid because order already expired")
+			return errors.New("order expired")
+		}
+
+		// 4. Update status
+		if err := s.OrderRepo.UpdateStatus(
+			tx,
+			orderID,
+			order.Status,
+			enum.StatusPaid,
+			nil,
+		); err != nil {
+			s.Log.WithError(err).
+				WithField("order_id", orderID).
+				Error("failed to update order status to paid")
+			return err
+		}
+
+		// 5. Reload updated order
+		updatedOrder, err = s.OrderRepo.FindByID(tx, orderID)
+		if err != nil {
+			return err
+		}
+
+		// 6. Create outbox event
+		payload := model.OrderPaidPayload{
+			OrderID: updatedOrder.OrderID.String(),
+			PaidAt:  time.Now(),
+		}
+
+		jsonPayload, err := json.Marshal(payload)
+		if err != nil {
+			s.Log.WithError(err).
+				WithField("order_id", orderID).
+				Error("failed to marshal order paid payload")
+			return err
+		}
+
+		outboxEvent := entity.NewOutboxEvent(
+			updatedOrder.OrderID,
+			enum.EventTypeOrderPaid,
+			jsonPayload,
+			"PENDING",
+		)
+
+		if err := s.OutboxRepo.Create(tx, outboxEvent); err != nil {
+			s.Log.WithError(err).
+				WithField("order_id", orderID).
+				Error("failed to persist order paid outbox event")
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	s.Log.WithFields(logrus.Fields{
+		"order_id": updatedOrder.OrderID,
+		"user_id":  updatedOrder.UserID,
+		"status":   updatedOrder.Status,
+	}).Info("order successfully marked as paid and outbox event created")
+
+	return converter.OrderToResponse(updatedOrder), nil
+}
