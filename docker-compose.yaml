@@ -1,32 +1,27 @@
-version: "3.8"
-
 services:
   kafka:
-    image: confluentinc/cp-kafka:7.6.0
+    image: confluentinc/cp-kafka:${KAFKA_VERSION}
     container_name: kafka
     ports:
-      - "9093:9093"
+      - "${KAFKA_EXTERNAL_PORT}:${KAFKA_EXTERNAL_PORT}"
     environment:
-      # === KRaft ===
+      # ===== KRaft Configuration =====
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9094 # Port controller dipindah ke 9094
-      CLUSTER_ID: "qtU568y5SQuR5SJ6Wz7m2A"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:${KAFKA_CONTROLLER_PORT}
+      CLUSTER_ID: "${KAFKA_CLUSTER_ID}"
 
-      # === Listeners ===
-      # INTERNAL: port 9092
-      # EXTERNAL: port 9093
-      # CONTROLLER: port 9094
-      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:9093,CONTROLLER://0.0.0.0:9094
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:9093
+      # ===== Listeners =====
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:${KAFKA_INTERNAL_PORT},EXTERNAL://0.0.0.0:${KAFKA_EXTERNAL_PORT},CONTROLLER://0.0.0.0:${KAFKA_CONTROLLER_PORT}
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:${KAFKA_INTERNAL_PORT},EXTERNAL://localhost:${KAFKA_EXTERNAL_PORT}
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
 
-      # === Storage ===
+      # ===== Storage =====
       KAFKA_LOG_DIRS: /var/lib/kafka/data
 
-      # === Single-node safe defaults ===
+      # ===== Single-node Safe Defaults =====
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
@@ -41,14 +36,12 @@ services:
     depends_on:
       - kafka
     ports:
-      - "8081:8080"
+      - "${KAFKA_UI_PORT}:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local
-      # Kafka-UI use internal port (9092)
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:${KAFKA_INTERNAL_PORT}
       DYNAMIC_CONFIG_ENABLED: "true"
-      LOGGING_LEVEL_ROOT: DEBUG
-      LOGGING_LEVEL_COM_PROVECTUS: DEBUG
+      LOGGING_LEVEL_ROOT: ${KAFKA_UI_LOG_LEVEL}
 
 volumes:
   kafka-data:
