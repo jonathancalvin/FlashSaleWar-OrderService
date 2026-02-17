@@ -195,7 +195,14 @@ func (s *orderUseCase) CancelOrder(
             return err
         }
 
-        // 2. Validate Transition
+		// 2. Idempotency check
+		if order.Status == enum.StatusCancelled {
+			s.Log.Infof("Idempotency Hit: Order %s is already cancelled", req.OrderID)
+			updatedOrder = order
+			return nil
+		}
+
+        // 3. Validate Transition
         if err := enum.ValidateTransition(order.Status, enum.StatusCancelled); err != nil {
             s.Log.WithFields(logrus.Fields{
                 "order_id":    req.OrderID,
@@ -205,7 +212,7 @@ func (s *orderUseCase) CancelOrder(
             return err
         }
 
-        // 3. Update Status
+        // 4. Update Status
         if err := s.OrderRepo.UpdateStatus(
             tx, 
             req.OrderID, 
@@ -217,13 +224,13 @@ func (s *orderUseCase) CancelOrder(
             return err
         }
         
-        // 4. Reload updated order inside TX
+        // 5. Reload updated order inside TX
         updatedOrder, err = s.OrderRepo.FindByID(tx, req.OrderID)
         if err != nil {
             return err
         }
 
-        // 5. Create Outbox Event
+        // 6. Create Outbox Event
         cancelPayload := model.OrderCancelledPayload{
             OrderID:     updatedOrder.OrderID.String(),
             CancelledAt: time.Now(),
@@ -273,7 +280,7 @@ func (s *orderUseCase) UpdateOrderStatus(
 	var updatedOrder *entity.Order
 
 	err := s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-
+		// 1. Fetch order
 		order, err := s.OrderRepo.FindByID(tx, orderID)
 		if err != nil {
 			s.Log.WithError(err).
@@ -284,7 +291,14 @@ func (s *orderUseCase) UpdateOrderStatus(
 
 		from := order.Status
 
-		// 1. Validate transition
+		// 2. Idempotency check
+		if order.Status == to {
+			s.Log.Infof("Idempotency Hit: Order %s is already %s", orderID, to)
+			updatedOrder = order
+			return nil
+		}
+
+		// 3. Validate transition
 		if err := enum.ValidateTransition(from, to); err != nil {
 			s.Log.WithFields(logrus.Fields{
 				"order_id": orderID,
@@ -294,10 +308,10 @@ func (s *orderUseCase) UpdateOrderStatus(
 			return err
 		}
 
-		// 2. Determine expired_at
+		// 4. Determine expired_at
 		newExpiredAt := enum.CalculateExpiryTime(to)
 
-		// 3. Update status
+		// 5. Update status
 		if err := s.OrderRepo.UpdateStatus(
 			tx,
 			orderID,
@@ -311,7 +325,7 @@ func (s *orderUseCase) UpdateOrderStatus(
 			return err
 		}
 
-		// 4. Reload updated order inside TX
+		// 6. Reload updated order inside TX
 		updatedOrder, err = s.OrderRepo.FindByID(tx, orderID)
 		if err != nil {
 			return err
@@ -355,7 +369,14 @@ func (s *orderUseCase) MarkOrderPaid(
 			return err
 		}
 
-		// 2. Validate transition
+		// 2. Idempotency check
+		if order.Status == enum.StatusPaid {
+			s.Log.Infof("Idempotency Hit: Order %s is already marked as paid", orderID)
+			updatedOrder = order
+			return nil
+		}
+
+		// 3. Validate transition
 		if err := enum.ValidateTransition(order.Status, enum.StatusPaid); err != nil {
 			s.Log.WithFields(logrus.Fields{
 				"order_id":      orderID,
@@ -365,7 +386,7 @@ func (s *orderUseCase) MarkOrderPaid(
 			return err
 		}
 
-		// 3. Optional: validate expiry
+		// 4. Optional: validate expiry
 		if !order.ExpiredAt.IsZero() && time.Now().After(order.ExpiredAt) {
 			s.Log.WithFields(logrus.Fields{
 				"order_id": orderID,
@@ -374,7 +395,7 @@ func (s *orderUseCase) MarkOrderPaid(
 			return errors.New("order expired")
 		}
 
-		// 4. Update status
+		// 5. Update status
 		if err := s.OrderRepo.UpdateStatus(
 			tx,
 			orderID,
@@ -388,13 +409,13 @@ func (s *orderUseCase) MarkOrderPaid(
 			return err
 		}
 
-		// 5. Reload updated order
+		// 6. Reload updated order
 		updatedOrder, err = s.OrderRepo.FindByID(tx, orderID)
 		if err != nil {
 			return err
 		}
 
-		// 6. Create outbox event
+		// 7. Create outbox event
 		payload := model.OrderPaidPayload{
 			OrderID: updatedOrder.OrderID.String(),
 			PaidAt:  time.Now(),
