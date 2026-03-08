@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -9,9 +8,7 @@ import (
 )
 
 func NewViper() *viper.Viper {
-	if err := godotenv.Load(); err != nil {
-		panic(fmt.Errorf("failed to load .env: %w", err))
-	}
+	_ = godotenv.Load()
 
 	v := viper.New()
 	v.AutomaticEnv()

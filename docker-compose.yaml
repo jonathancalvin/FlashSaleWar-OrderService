@@ -1,40 +1,129 @@
 services:
+
+  web:
+    build:
+      context: .
+      args:
+        SERVICE: web
+    image: flashsale-order-web:latest
+    ports:
+      - "${WEB_PORT}:8080"
+    env_file:
+      - ./.env
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  consumer:
+    build:
+      context: .
+      args:
+        SERVICE: order-consumer
+    image: flashsale-order-consumer:latest
+    env_file:
+      - ./.env
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  outbox-worker:
+    build:
+      context: .
+      args:
+        SERVICE: outbox-worker
+    image: flashsale-order-outbox-worker:latest
+    env_file:
+      - ./.env
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+    ports:
+      - "${DATABASE_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  migrate:
+    image: migrate/migrate
+    volumes:
+      - ./migrations:/migrations
+    env_file:
+      - ./.env
+    entrypoint: [
+      "migrate", 
+      "-path", "/migrations/", 
+      "-database", "postgres://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_NAME}?sslmode=disable",
+    ]
+    command: ["up"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   kafka:
     image: confluentinc/cp-kafka:${KAFKA_VERSION}
-    container_name: kafka
+    restart: unless-stopped
     ports:
       - "${KAFKA_EXTERNAL_PORT}:${KAFKA_EXTERNAL_PORT}"
     environment:
-      # ===== KRaft Configuration =====
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:${KAFKA_CONTROLLER_PORT}
       CLUSTER_ID: "${KAFKA_CLUSTER_ID}"
 
-      # ===== Listeners =====
       KAFKA_LISTENERS: INTERNAL://0.0.0.0:${KAFKA_INTERNAL_PORT},EXTERNAL://0.0.0.0:${KAFKA_EXTERNAL_PORT},CONTROLLER://0.0.0.0:${KAFKA_CONTROLLER_PORT}
       KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:${KAFKA_INTERNAL_PORT},EXTERNAL://localhost:${KAFKA_EXTERNAL_PORT}
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
 
-      # ===== Storage =====
       KAFKA_LOG_DIRS: /var/lib/kafka/data
 
-      # ===== Single-node Safe Defaults =====
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
 
     volumes:
-      - kafka-data:/var/lib/kafka/data
+      - kafka_data:/var/lib/kafka/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:${KAFKA_INTERNAL_PORT} --list > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
-    container_name: kafka-ui
+    restart: unless-stopped
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     ports:
       - "${KAFKA_UI_PORT}:8080"
     environment:
@@ -44,4 +133,5 @@ services:
       LOGGING_LEVEL_ROOT: ${KAFKA_UI_LOG_LEVEL}
 
 volumes:
-  kafka-data:
+  kafka_data:
+  postgres_data:

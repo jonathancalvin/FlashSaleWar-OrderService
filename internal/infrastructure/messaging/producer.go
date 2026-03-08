@@ -16,7 +16,6 @@ type KafkaProducer interface {
 type KafkaProducerImpl struct {
 	Producer sarama.SyncProducer
 	Log      *logrus.Logger
-	done     chan struct{}
 }
 
 func (p *KafkaProducerImpl) Publish(topic string, key string, envelope model.EventEnvelope) error {
